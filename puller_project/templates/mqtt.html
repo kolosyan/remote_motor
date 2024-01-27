@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% if user.is_authenticated %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
+  <h1>Страница управления</h1>
+
+  <!-- Кнопки управления -->
+
+  <button id="btn1">Включить</button>
+  <button id="btn2">Выключить</button>
+
+  <script>
+
+// Параметры подключения
+var broker = '192.168.0.109';
+var port = 1883;
+var clientId = 'client1234';
+
+// Создание клиента
+var client = new Paho.MQTT.Client(broker, port, clientId);
+
+// Обработчики событий
+client.onConnectionLost = onConnectionLost;
+client.onMessageArrived = onMessageArrived;
+
+// Подключение к брокеру
+// client.connect({onSuccess: onSuccess});
+client.connect({onSuccess: function() {
+  console.log("Connected to MQTT broker");
+  client.subscribe("esp/status", {qos: 1});
+}});
+
+function onConnect() {
+  // Подписка на топик после подключения
+  client.subscribe("esp/status");
+  console.log("Connected");
+}
+
+function onConnectionLost(responseObject) {
+  console.log("Connection lost: " + responseObject.errorMessage);
+}
+
+// function onMessageArrived(message) {
+//   console.log("Message: " + message.payloadString);
+// }
+function onMessageArrived(message) {
+  console.log("Received message on topic " + message.destinationName + ": " + message.payloadString);
+  // process.stdout.write("Received message: " + message.payloadString + "\n");
+}
+
+// Отправка команд при нажатии на кнопки
+document.getElementById("btn1").addEventListener("click", function() {
+  let message = new Paho.MQTT.Message("1");
+  message.destinationName = "esp32/led";
+  client.send(message);
+});
+
+document.getElementById("btn2").addEventListener("click", function() {
+  let message = new Paho.MQTT.Message("0");
+  message.destinationName = "esp32/led";
+  client.send(message);
+});
+
+
+</script>
+
+{% else %}
+
+  <h1>Доступ запрещен</h1>
+
+  <p>Для доступа к этой странице необходимо авторизоваться</p>
+
+{% endif %}
+
+{% endblock %}
