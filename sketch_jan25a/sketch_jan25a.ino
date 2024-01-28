@@ -5,7 +5,7 @@
 const char* ssid = "TP-Link_D410"; // заменить на ssid вашей сети
 const char* password = "18364804"; // заменить на пароль вашей сети 
 
-const char* mqtt_server = "192.168.0.109"; // IP адрес брокера MQTT
+const char* mqtt_server = "192.168.0.110"; // IP адрес брокера MQTT
 const int mqtt_port = 1883; // порт брокера MQTT
 const char* mqtt_topic = "esp/led"; // топик для подписки
 
@@ -13,7 +13,7 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 // Пин светодиода 
-const int ledPin = 5; 
+const int ledPin = 4; 
 
 // Подключение к WiFi
 void setup_wifi() {
@@ -38,7 +38,7 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     
-    if (client.connect("ESP32Client")) {
+    if (client.connect("ESP32Cam")) {
       Serial.println("connected");  
       client.subscribe(mqtt_topic);
     } else {
