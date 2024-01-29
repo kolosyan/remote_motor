@@ -1,10 +1,13 @@
+
 {% extends 'base.html' %}
 
 {% block content %}
 
 {% if user.is_authenticated %}
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.2/mqttws31.min.js" type="text/javascript"></script>
+
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script> -->
   <h1>Страница управления</h1>
 
   <!-- Кнопки управления -->
@@ -14,77 +17,66 @@
 
   <script>
 
-// Параметры подключения
-var broker = '192.168.0.110';
-var port = 1883;
-var clientId = 'alex';
+var broker = '192.168.0.109';
+var port = 9001;
+var clientId = 'aleksejkolosov';
+var topic = "esp/led";
 
-// Создание клиента
+console.log("Before connecting to WebSocket");
+var socket = new WebSocket("ws://192.168.0.109:9001/mqtt/");
+console.log("After connecting to WebSocket");
 var client = new Paho.MQTT.Client(broker, port, clientId);
 
-// Обработчики событий
-//client.onConnectionLost = onConnectionLost;
-//client.onMessageArrived = onMessageArrived;
+socket.onopen = function (event) {
+    console.log("WebSocket connection opened.");
+};
 
-// Подключение к брокеру
+socket.onmessage = function (event) {
+    var data = JSON.parse(event.data);
+    console.log("WebSocket message received:", data);
+};
+
+socket.onclose = function (event) {
+    console.log("WebSocket connection closed.");
+};
+
+client.onConnectionLost = onConnectionLost;
+client.onMessageArrived = onMessageArrived;
+
 client.connect({
-    onSuccess: onConnect,
+    onSuccess: function() {
+        console.log("Connected to MQTT broker");
+        client.subscribe(topic, { qos: 1 });
+    },
     onFailure: onConnectionFailure
 });
 
-//client.connect({onSuccess: function() {
-//  console.log("Connected to MQTT broker");
-//  client.subscribe("esp/led", {qos: 1});
-//}});
-
-
-// Обработчики событий
-client.onConnectionLost = onConnectionLost;
-client.onMessageArrived = onMessageArrived;
-//client.onMessageDelivered = onMessageDelivered;
-
 function onConnectionFailure(responseObject) {
-  console.log("Failed to connect: " + responseObject.errorMessage);
-}
-
-function onConnect() {
-  // Подписка на топик после подключения
-  client.subscribe("esp/led");
-  console.log("Connected");
+    console.log("Failed to connect: " + responseObject.errorMessage);
 }
 
 function onConnectionLost(responseObject) {
-  console.log("Connection lost: " + responseObject.errorMessage);
+    console.log("Connection lost: " + responseObject.errorMessage);
 }
 
-//function onMessageArrived(message) {
-//  console.log("Received message on topic " + message.destinationName + ": " + message.payloadString);
-// process.stdout.write("Received message: " + message.payloadString + "\n");
-//}
-
-// function onMessageArrived(message) {
-//   console.log("Message: " + message.payloadString);
-// }
 function onMessageArrived(message) {
-  console.log("Received message on topic " + message.destinationName + ": " + message.payloadString);
-  // process.stdout.write("Received message: " + message.payloadString + "\n");
+    console.log("Received message on topic " + message.destinationName + ": " + message.payloadString);
 }
 
 // Отправка команд при нажатии на кнопки
 document.getElementById("btn1").addEventListener("click", function() {
-  let message = new Paho.MQTT.Message("1");
-  message.destinationName = "esp/led";
-  client.send(message);
+    let message = new Paho.MQTT.Message("1");
+    message.destinationName = topic;
+    client.send(message);
 });
 
 document.getElementById("btn2").addEventListener("click", function() {
-  let message = new Paho.MQTT.Message("0");
-  message.destinationName = "esp/led";
-  client.send(message);
+    let message = new Paho.MQTT.Message("0");
+    message.destinationName = topic;
+    client.send(message);
 });
 
-
-</script>
+  </script>
 
 {% else %}
 
